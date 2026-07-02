@@ -354,13 +354,106 @@ const updateVideo = asyncHandler(async ( req, res) => {
 
 })
 
+const togglePublishStatus = asyncHandler(async ( req, res) => {
+    const { videoId } = req.params
+
+    if(!videoId || !mongoose.Types.ObjectId.isValid(videoId)){
+        throw new ApiError(400, "Invalid videoId")
+    }
+
+    const existingVideo = await Video.findById(videoId)
+
+    if(!existingVideo){
+        throw new ApiError(400, "Video not Found")
+    }
+
+    if(existingVideo.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not authorized to update the video")
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+        videoId, 
+        { 
+            $set: {
+                 isPublished: !existingVideo.isPublished 
+                }
+        },
+        { new: true }
+    )
+
+    if(!updatedVideo){
+        throw new ApiError(500, "Something went wrong while toggling publish status")
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, { isPublished: updatedVideo.isPublished },
+            `Video ${ updatedVideo.isPublished ? "published" : "unpublished"} successfully`)
+        )
+})
+
+const deleteVideo = asyncHandler(async ( req, res) => {
+    const { videoId } = req.params
+
+    if(!videoId || !mongoose.Types.ObjectId.isValid(videoId)){
+        throw new ApiError(400, "invalid videoId")
+    }
+
+    const existingVideo = await Video.findById(videoId)
+
+    if(!existingVideo){
+        throw new ApiError(400, "Video not Found")
+    }
+
+    if(existingVideo.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not authorized to update the video")
+    }
+
+    const deletedVideo = await Video.findByIdAndDelete(videoId)
+
+    if(!deletedVideo){
+        throw new ApiError(500, "Something went wrong while deleting the video")
+    }
+
+    if(existingVideo.videoFiles){
+        deleteFromCloudinary(existingVideo.videoFiles, "video").
+        catch((err) => {
+            console.error("Error deleting video from cloudinary: ", err)
+        })
+    }  
+
+    if(existingVideo.thumbnail){
+        deleteFromCloudinary(existingVideo.thumbnail, "image").
+        catch((err) => {
+            console.error("Error deleting thumbnail from cloudinary: ", err)
+        })
+    }
+
+    await Promise.all([
+        // Like.deleteMany( { video: videoId }),
+        // Comment.deleteMany( { video: videoId }),
+        // after complating the like and comment controller writing then comment out
+        User.updateMany(
+            { watchHistory: videoId },
+            { $pull: { watchHistory: videoId}}
+        )
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "Video deleted successfully")
+        )
+})
+
 
 export {
     getAllVideos,
     publishAVideo,
     getVideoById,
     updateVideo,
-    // deleteVideo,
-    // togglePublishStatus
+    deleteVideo,
+    togglePublishStatus
 }
 
