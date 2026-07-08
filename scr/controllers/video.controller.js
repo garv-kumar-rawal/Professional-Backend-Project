@@ -195,7 +195,7 @@ const getVideoById = asyncHandler(async ( req, res) => {
             $lookup: {
                 from: "users",
                 localField: "owner",
-                froeignField: "_id",
+                foreignField: "_id",
                 as: "ownerDetails",
                 pipeline: [
                     {
@@ -279,7 +279,7 @@ const getVideoById = asyncHandler(async ( req, res) => {
     await Video.findByIdAndUpdate(
         videoId,
         { $inc: { view: 1 }},
-        { new: true }
+        { returnDocument: 'after'}
     );
 
     await User.findByIdAndUpdate(
@@ -315,7 +315,7 @@ const updateVideo = asyncHandler(async ( req, res) => {
     }
 
     if(existingVideo.owner.toString() !== req.user._id.toString()){
-        throw new ApiError(403, "You are not autthorized to update this video")
+        throw new ApiError(403, "You are not authorized to update this video")
     }
 
     let newThumbnailUrl = null
@@ -339,7 +339,7 @@ const updateVideo = asyncHandler(async ( req, res) => {
     const updatedVideo = await Video.findByIdAndUpdate(
         videoId,
         { $set: updateFields },
-        { new: true }
+        { returnDocument: 'after'}
     )
 
     if(newThumbnailUrl && existingVideo.thumbnail){
@@ -378,7 +378,7 @@ const togglePublishStatus = asyncHandler(async ( req, res) => {
                  isPublished: !existingVideo.isPublished 
                 }
         },
-        { new: true }
+        { returnDocument: 'after' }
     )
 
     if(!updatedVideo){
