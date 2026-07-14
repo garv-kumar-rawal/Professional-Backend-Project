@@ -4,6 +4,7 @@ import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { Like } from '../models/like.model.js';
 import { Video } from '../models/video.model.js';
+import { Tweet } from '../models/tweet.model.js';
 
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
@@ -29,7 +30,6 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
             .status(200)
             .json(new ApiResponse(200, { isLiked: false }, "Video unliked successfully"))
     }
-    console.log("complate: ")
 
     const newLike = await Like.create({
         video: videoId,
@@ -43,6 +43,84 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     return res
         .status(200)
         .json(new ApiResponse(200, { isLiked: true }, "Video liked successfully"))
+
+})
+
+const toggleCommentLike = asyncHandler(async (req, res) => {
+    const { commentId } = req.params
+
+    if(!commentId || !mongoose.Types.ObjectId.isValid(commentId)){
+        throw new ApiError(400, "Invalid comment ID")
+    }
+
+    const comment = await Comment.findById(commentId)
+    
+    if(!comment){
+        throw new ApiError(404, "Comment not found")
+    }
+
+    const existingLike = await Like.findOneAndDelete({
+        comment: commentId,
+        likedBy: req.user._id
+    })
+
+    if(existingLike){
+        return res
+            .status(200)
+            .json(200, { isLiked: false }, "Comment Unlike successfully")
+    }
+
+    const newLike = await Like.create({
+        comment: commentId,
+        likedBy: req.user._id
+    })
+
+    if(!newLike){
+        throw new ApiError(500, "failed to like the comment")
+    }
+
+    return res
+        .status(200)
+        .json(200, { isLiked: true }, "Comment like successfully")
+
+})
+
+const toggleTweetLike = asyncHandler(async(req, res) => {
+    const { tweetId } = req.params
+
+    if(!tweetId || !mongoose.Types.ObjectId.isValid(tweetId)){
+        throw new ApiError(400, "Invalid tweet ID")
+    }
+
+    const tweet = await Tweet.findById(tweetId)
+    
+    if(!tweet){
+        throw new ApiError(404, "Tweet not found")
+    }
+
+    const existingLike = await Like.findOneAndDelete({
+        tweet: tweetId,
+        likedBy: req.user._id
+    })
+
+    if(existingLike){
+        return res
+            .status(200)
+            .json(200, { isLiked: false }, "Tweet Unlike successfully")
+    }
+
+    const newLike = await Like.create({
+        tweet: tweetId,
+        likedBy: req.user._id
+    })
+
+    if(!newLike){
+        throw new ApiError(500, "failed to like the tweet")
+    }
+
+    return res
+        .status(200)
+        .json(200, { isLiked: true }, "tweet like successfully")
 
 })
 
@@ -132,5 +210,8 @@ const getLikedVideos = asyncHandler(async (req, res) => {
 
 export {
     toggleVideoLike,
-    getLikedVideos,
+    toggleCommentLike,
+    toggleTweetLike,
+    getLikedVideos
+
 }
