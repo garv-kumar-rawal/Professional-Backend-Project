@@ -26,4 +26,9 @@ const playlistSchema = new Schema(
     }
 )
 
+playlistSchema.index(
+    { title: 1, owner: 1 },
+    { unique: 1 }
+)
+
 export const Playlist = mongoose.model("Playlist", playlistSchema)

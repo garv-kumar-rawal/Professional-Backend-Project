@@ -116,11 +116,12 @@ const getAllVideos = asyncHandler(async (req, res) => {
 const publishAVideo = asyncHandler(async ( req, res) => {
     const { title, description } = req.body
 
+    // Note : block the duplication of the video publish if the same video is alredy uploaded
+
     if(!title?.trim() || !description?.trim()){
         throw new ApiError(400, "Title and decription are required")
     }
 
-    // console.log("req.files: ", req.files)
     const videoLocalPath = req.files?.videoFiles?.[0]?.path
     const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path
 
@@ -146,7 +147,6 @@ const publishAVideo = asyncHandler(async ( req, res) => {
         throw new ApiError(500, "thumbnail file upload failed on cloudinary")
     }
 
-    // console.log(videoFiles?.url)
     const video = await Video.create({
         title: title.trim(),
         description: description.trim(),
