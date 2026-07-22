@@ -1,5 +1,4 @@
 import { mongoose } from "mongoose";
-
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -33,6 +32,13 @@ const createPlaylist = asyncHandler(async( req, res) => {
     }
 })
 
+const getUserPlaylist = asyncHandler(async( req, res) => {
+    const { userId } = req.params
+
+    if(!userId){
+        throw new ApiError(404, "User Id is required")
+    }
+})
 export {
     createPlaylist,
 }
