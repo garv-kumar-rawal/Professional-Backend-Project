@@ -5,7 +5,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
 
 const createPlaylist = asyncHandler(async( req, res) => {
-    console.log("req.body: ", req.body)
+
     const { title, description } = req.body
 
     if(!title || title.trim()==""){
@@ -33,12 +33,53 @@ const createPlaylist = asyncHandler(async( req, res) => {
 })
 
 const getUserPlaylist = asyncHandler(async( req, res) => {
+
     const { userId } = req.params
 
-    if(!userId){
-        throw new ApiError(404, "User Id is required")
+    if(!userId || !mongoose.Types.ObjectId.isValid(userId)){
+        throw new ApiError(404, "Invalid User")
     }
+
+    const playlist = await Playlist.aggregate([
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(userId)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "videos"
+            }
+        },
+        {
+            $addFields: {
+                totalVideo: { $size: "$videos" },
+                totalView: { $sum: "$videos.view" },
+                thumbnail: { $first: "$video.thumbnail" }
+            }
+        },
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                totalVideo: 1,
+                totalView: 1,
+                thumbnail: 1,
+                createdAt: 1
+            }
+        }
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, playlist, "The Playlist fetch successfully")
+        )
 })
 export {
     createPlaylist,
+    getUserPlaylist,
 }
