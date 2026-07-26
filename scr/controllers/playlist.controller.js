@@ -81,17 +81,118 @@ const getUserPlaylist = asyncHandler(async( req, res) => {
 })
 
 const getPlaylistById = asyncHandler(async(req ,res) => {
-    const { playlistId } = req.paramas
+    const { playlistId } = req.params
 
     if(!playlistId || !mongoose.Types.ObjectId.isValid(playlistId)){
         throw new ApiError(404, "Invalid Playlist Id")
     }
 
-    
+    const existPlaylist = await Playlist.findById(playlistId);
+
+    if(!existPlaylist){
+        throw new ApiError(404, "Playlist not found")
+    }
+
+    const playlist = await Playlist.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(playlistId)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "videos",
+                foreignField: "_id",
+                as: "videos",
+                pipeline: [
+                    {
+                        $match: {
+                            isPublished: true
+                        }
+                    },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        username: 1,
+                                        "avatar.url": 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: { $first: "$owner" }
+                        }
+                    },
+                    {
+                        $project: {
+                            title: 1,
+                            thumbnail: 1,
+                            duration: 1,
+                            views: 1,
+                            owner: 1,
+                            createdAt: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            username: 1,
+                            "avatar.url": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                owner: { $first: "$owner" },
+                totalVideos: { $size: "$videos" },
+                totalViews: { $sum: "$videos.view" }
+            }
+        },
+        {
+            $project: {
+                title: 1,
+                description: 1,
+                videos: 1,
+                owner: 1,
+                totalVideos: 1,
+                totalViews: 1,
+                createdAt: 1,
+                updatedAt: 1
+
+            }
+        }
+    ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, playlist, "playlist fetched successfully")
+        )
 })
 
 
 export {
     createPlaylist,
     getUserPlaylist,
+    getPlaylistById,
 }
