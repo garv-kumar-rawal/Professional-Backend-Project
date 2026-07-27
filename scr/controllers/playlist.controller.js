@@ -1,8 +1,9 @@
-import { mongoose } from "mongoose";
+import { isValidObjectId, mongoose } from "mongoose";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { Playlist } from "../models/playlist.model.js";
+import { Video } from "../models/video.model.js";
 
 const createPlaylist = asyncHandler(async( req, res) => {
 
@@ -172,7 +173,7 @@ const getPlaylistById = asyncHandler(async(req ,res) => {
             $project: {
                 title: 1,
                 description: 1,
-                videos: 1,
+                video: 1,
                 owner: 1,
                 totalVideos: 1,
                 totalViews: 1,
@@ -190,9 +191,59 @@ const getPlaylistById = asyncHandler(async(req ,res) => {
         )
 })
 
+const addVideoToPlaylist = asyncHandler(async(req, res) => {
+    const { videoId, playlistId } = req.params
+
+    console.log("req: ", req.params)
+
+    if(!videoId && !playlistId){
+        throw new ApiError(400, "Video and Playlist Id is required")
+    }
+
+    if(!isValidObjectId(videoId) || !isValidObjectId(playlistId)){
+        throw new ApiError(400, "Invalid Video and playlist Id")
+    }
+
+    const playlist = await Playlist.findById(playlistId)
+
+    const video = await Video.findById(videoId)
+
+    console.log(playlist)
+
+    if(!playlist){
+        throw new ApiError(404, "The playlist not found")
+    }
+
+    if(!video){
+        throw new ApiError(404, "The Video not found")
+    }
+
+    if(playlist.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "you are not authorized to modify this playlist")
+    }
+
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(
+        playlistId,
+        {
+            $addToSet: { video: videoId }
+        },
+        { new: true }
+    )
+
+    if(!updatedPlaylist){
+        throw new ApiError(500, "Something went wrong while adding the vidoe")
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedPlaylist, "Video added to playlist successfully")
+        )
+})
 
 export {
     createPlaylist,
     getUserPlaylist,
     getPlaylistById,
+    addVideoToPlaylist,
 }
