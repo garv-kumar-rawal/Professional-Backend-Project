@@ -35,6 +35,8 @@ const createPlaylist = asyncHandler(async( req, res) => {
 
 const getUserPlaylist = asyncHandler(async( req, res) => {
 
+    // the is a issue in the video, video views and video total in getUserPlaylist and getPlaylistById
+
     const { userId } = req.params
 
     if(!userId || !mongoose.Types.ObjectId.isValid(userId)){
@@ -241,9 +243,56 @@ const addVideoToPlaylist = asyncHandler(async(req, res) => {
         )
 })
 
+const removeVideoFromPlaylist = asyncHandler(async(req, res) => {
+    const { videoId, playlistId } = req.params
+
+    if(!videoId && !playlistId){
+        throw new ApiError(400, "video and playlist Id is required")
+    }
+
+    if(!isValidObjectId(videoId) || !isValidObjectId(playlistId)){
+        throw new ApiError(400, "Invalid video and playlist Id")
+    }
+
+    const video = await Video.findById(videoId)
+
+    const playlist = await Playlist.findById(playlistId)
+
+    if(!video){
+        throw new ApiError(404, "Video not found")
+    }
+
+    if(!playlist){
+        throw new ApiError(404, "Playlist not found")
+    }
+
+    if(playlist.owner.toString() !== req.user._id.toString()){
+        throw new ApiError(403, "You are not authprized to remove the vidoe from the playlsit")
+    }
+
+    const updatedPlaylist = await Playlist.findByIdAndUpdate(
+        playlistId,
+        {
+            $pull: { video: videoId }
+        },
+        { new: true }
+    )
+
+    if(!updatedPlaylist){
+        throw new ApiError(500, "something went wrong while removing video form the playlist")
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedPlaylist, "Video remove from playlist successfully")
+        )
+}) 
+
 export {
     createPlaylist,
     getUserPlaylist,
     getPlaylistById,
     addVideoToPlaylist,
+    removeVideoFromPlaylist,
 }
