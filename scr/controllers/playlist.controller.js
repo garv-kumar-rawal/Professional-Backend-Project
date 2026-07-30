@@ -321,6 +321,19 @@ const deletePlaylist = asyncHandler(async(req, res) => {
         .json(200, {}, "Playlist delete successfully")
 })
 
+const updatePlaylist = asyncHandler(async(req, res) => {
+    const { playlistId } = req.params
+    const { title, description } = req.body
+
+    if(!playlistId){
+        throw new ApiError(400, "playlist Id is required")
+    }
+
+    if(!title || !description){
+        throw new ApiError(400, "Title or description is required")
+    }
+})
+
 export {
     createPlaylist,
     getUserPlaylist,
@@ -328,4 +341,5 @@ export {
     addVideoToPlaylist,
     removeVideoFromPlaylist,
     deletePlaylist,
+    updatePlaylist
 }

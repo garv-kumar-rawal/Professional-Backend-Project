@@ -6,6 +6,7 @@ import {
     addVideoToPlaylist,
     removeVideoFromPlaylist,
     deletePlaylist,
+    updatePlaylist
 } from "../controllers/playlist.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
