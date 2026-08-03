@@ -23,7 +23,9 @@ const createPlaylist = asyncHandler(async( req, res) => {
     
         return res
             .status(200)
-            .json(200, playlist, "playlist create successfully")
+            .json(
+                new ApiError(200, playlist, "playlist create successfully")
+            )
     
     } catch (error) {
         if(error.code==11000){   // 11000 code of the mongoDB insert the duplicate field
@@ -35,7 +37,7 @@ const createPlaylist = asyncHandler(async( req, res) => {
 
 const getUserPlaylist = asyncHandler(async( req, res) => {
 
-    // the is a issue in the video, video views and video total in getUserPlaylist and getPlaylistById
+    // there is a issue in the video, video views and video total in getUserPlaylist and getPlaylistById
 
     const { userId } = req.params
 
@@ -52,7 +54,7 @@ const getUserPlaylist = asyncHandler(async( req, res) => {
         {
             $lookup: {
                 from: "videos",
-                localField: "videos",
+                localField: "video",
                 foreignField: "_id",
                 as: "videos"
             }
@@ -61,7 +63,7 @@ const getUserPlaylist = asyncHandler(async( req, res) => {
             $addFields: {
                 totalVideo: { $size: "$videos" },
                 totalView: { $sum: "$videos.view" },
-                thumbnail: { $first: "$video.thumbnail" }
+                thumbnail: { $first: "$videos.thumbnail" }
             }
         },
         {
@@ -318,11 +320,14 @@ const deletePlaylist = asyncHandler(async(req, res) => {
 
     return res  
         .status(200)
-        .json(200, {}, "Playlist delete successfully")
+        .json(
+            new ApiError(200, {}, "Playlist delete successfully")
+        )
 })
 
 const updatePlaylist = asyncHandler(async(req, res) => {
     const { playlistId } = req.params
+    console.log("req.params and req.body : ", req.params, req.body)
     const { title, description } = req.body
 
     if(!playlistId){

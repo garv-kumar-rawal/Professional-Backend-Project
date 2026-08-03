@@ -1,7 +1,7 @@
 {
   "name": "main-professional-backend",
   "version": "1.0.0",
-  "description": "a backed project with chai aur code youtube channel",
+  "description": "a backed project with javascript for developing skill",
   "main": "index.js",
   "type": "module",
   "scripts": {
