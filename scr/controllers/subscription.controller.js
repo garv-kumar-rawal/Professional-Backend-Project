@@ -6,8 +6,6 @@ import { Subscription } from "../models/subscription.model.js"
 
 const togglesubscriber = asyncHandler( async(req, res ) => {
     const { channelId } = req.params
-
-    console.log("req.params: ", req.params)
     
     if(!channelId){
         throw new ApiError(400, "channelId is required")
@@ -20,8 +18,6 @@ const togglesubscriber = asyncHandler( async(req, res ) => {
     if(channelId == req.user._id.toString()){
         throw new ApiError(403, "you are not subscriber your own channel")
     }
-
-    console.log("req.user", req.user._id.toString())
 
     const existingsubscription = await Subscription.findOne({
         subscriber: req.user._id,
@@ -70,7 +66,7 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
         throw new ApiError(400, "Invalid channel Id")
     }
 
-    const subscriber = await Subscription.aggregate([
+    const subscribers = await Subscription.aggregate([
         {
             $match: {
                 channelId: new mongoose.Types.ObjectId(channelId)
@@ -102,18 +98,37 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
             $project: {
                 _id: 0,
                 subscriber: 1,
-                subsciberedAt: "$createdAt"
+                subscibedAt: "$createdAt"
             }
         },
         {
-            $sort: { subsciberedAt: -1 } // for newest first
+            $sort: { subscibedAt: -1 } // for newest first
         }
     ])
+
+    const beforeFacet = await Subscription.aggregate([
+        { $match: { channel: new mongoose.Types.ObjectId(channelId) } },
+        {
+            $lookup: {
+                from: "users",
+                localField: "subscriber",
+                foreignField: "_id",
+                as: "subscriber",
+                pipeline: [
+                    { $project: { fullName: 1, username: 1, avatar: 1 } },
+                ],
+            },
+        },
+        { $addFields: { subscriber: { $first: "$subscriber" } } },
+        { $project: { _id: 0, subscriber: 1, subscribedAt: "$createdAt" } },
+        { $sort: { subscribedAt: -1 } },
+    ]);
+    console.log("Before facet:", JSON.stringify(beforeFacet, null, 2));
 
     return res  
         .status(200)
         .json(
-            new ApiResponse(200, subscriber, "Subscribers fetched succesfully")
+            new ApiResponse(200, subscribers, "Subscribers fetched succesfully")
         )
 })
 
