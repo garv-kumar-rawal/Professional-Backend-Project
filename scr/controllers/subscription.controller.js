@@ -132,6 +132,14 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
         )
 })
 
+const getSubscribedChannel = asyncHandler( async( req, res) => {
+    const { subscriberId } = req.params
+
+    if(!subscriberId){
+        throw new ApiError(400, "subscriberId is required")
+    }
+})
+
 export {
     togglesubscriber,
     getUserChannelSubscribers
