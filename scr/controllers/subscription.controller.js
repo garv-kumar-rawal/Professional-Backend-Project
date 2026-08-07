@@ -133,11 +133,19 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
 })
 
 const getSubscribedChannel = asyncHandler( async( req, res) => {
-    const { subscriberId } = req.params
+    const { subscriberId } = req.params || req.user._id
 
     if(!subscriberId){
         throw new ApiError(400, "subscriberId is required")
     }
+
+    const channel = await Subscription.aggregate([
+        {
+            $match: {
+                subscriber: new mongoose.Types.ObjectId(subscriberId)
+            }
+        }
+    ])
 })
 
 export {
