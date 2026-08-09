@@ -69,7 +69,7 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
     const subscribers = await Subscription.aggregate([
         {
             $match: {
-                channelId: new mongoose.Types.ObjectId(channelId)
+                channel: new mongoose.Types.ObjectId(channelId)
             }
         },
         {
@@ -77,7 +77,7 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
                 from: "users",
                 localField: "subscriber",
                 foreignField: "_id",
-                as: "subscriber",
+                as: "subscribers",
                 pipeline: [
                     {
                         $project: {
@@ -91,39 +91,41 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
         },
         {
             $addFields: {
-                subscriber: { $first: "$subscriber"}
+                subscribers: { $first: "$subscribers"}
             }
         },
         {
             $project: {
                 _id: 0,
-                subscriber: 1,
-                subscibedAt: "$createdAt"
+                subscribers: 1,
+                subscribedAt: "$createdAt"
             }
         },
         {
-            $sort: { subscibedAt: -1 } // for newest first
+            $sort: { subscribedAt: -1 } // for newest first
+        },
+        {
+            $facet: {
+                subscribers: [
+                    { $skip: 0 }
+                ],
+                totalCount: [
+                    { $count: "count"}
+                ]
+            }
+        },
+        {
+            $addFields: {
+                subscriberCount: { $ifNull: [{ $first: "$totalCount.count" }, 0]}
+            }
+        },
+        {
+            $project: {
+                subscribers: 1,
+                subscriberCount: 1
+            }
         }
     ])
-
-    const beforeFacet = await Subscription.aggregate([
-        { $match: { channel: new mongoose.Types.ObjectId(channelId) } },
-        {
-            $lookup: {
-                from: "users",
-                localField: "subscriber",
-                foreignField: "_id",
-                as: "subscriber",
-                pipeline: [
-                    { $project: { fullName: 1, username: 1, avatar: 1 } },
-                ],
-            },
-        },
-        { $addFields: { subscriber: { $first: "$subscriber" } } },
-        { $project: { _id: 0, subscriber: 1, subscribedAt: "$createdAt" } },
-        { $sort: { subscribedAt: -1 } },
-    ]);
-    console.log("Before facet:", JSON.stringify(beforeFacet, null, 2));
 
     return res  
         .status(200)
@@ -133,7 +135,7 @@ const getUserChannelSubscribers = asyncHandler( async(req, res) => {
 })
 
 const getSubscribedChannel = asyncHandler( async( req, res) => {
-    const { subscriberId } = req.params || req.user._id
+    const { subscriberId } = req.params
 
     if(!subscriberId){
         throw new ApiError(400, "subscriberId is required")
@@ -154,7 +156,7 @@ const getSubscribedChannel = asyncHandler( async( req, res) => {
                 pipeline: [
                     {
                         $lookup: {
-                            from: "subscription",
+                            from: "subscriptions",
                             localField: "_id",
                             foreignField: "channel",
                             as: "channelSubscribers"
@@ -175,11 +177,33 @@ const getSubscribedChannel = asyncHandler( async( req, res) => {
                     }
                 ]
             }
+        },
+        {
+            $addFields: {
+                channel: { $first: "$channel" }
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                channel: 1,
+                subscribedAt: 1
+            }
+        },
+        {
+            $sort : { subscribedAt: -1 }
         }
     ])
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel, "successfully fetched the subscribed channel")
+        )
 })
 
 export {
     togglesubscriber,
-    getUserChannelSubscribers
+    getUserChannelSubscribers,
+    getSubscribedChannel
 } 

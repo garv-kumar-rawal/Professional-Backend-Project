@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
     togglesubscriber,
     getUserChannelSubscribers,
+    getSubscribedChannel
 } from "../controllers/subscription.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -12,6 +13,8 @@ router.use(verifyJWT)
 router.route("/c/:channelId")
     .get(getUserChannelSubscribers)
     .patch(togglesubscriber)
+
+router.route("/u/:subscriberId").get(getSubscribedChannel)
 
 
 export default router
