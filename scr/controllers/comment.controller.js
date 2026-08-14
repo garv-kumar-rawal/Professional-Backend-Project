@@ -28,6 +28,12 @@ const getVideoComment = asyncHandler( async(req, res) => {
         }
     ])
 
+    return res
+        .status(200)
+        .json(
+            new ApiResponsez(200)
+        )
+
 
 })
 
