@@ -5,6 +5,7 @@ import { ApiResponse } from '../utils/apiResponse.js';
 import { Like } from '../models/like.model.js';
 import { Video } from '../models/video.model.js';
 import { Tweet } from '../models/tweet.model.js';
+import { Comment } from '../models/comment.model.js';
 
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
@@ -81,7 +82,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(200, { isLiked: true }, "Comment like successfully")
+        .json(
+            new ApiResponse(200, { isLiked: true }, "Comment like successfully")
+        )
 
 })
 

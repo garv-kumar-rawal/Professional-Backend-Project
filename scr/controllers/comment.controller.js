@@ -92,10 +92,6 @@ const getVideoComment = asyncHandler( async(req, res) => {
 
     const comments = await Comment.aggregatePaginate(commentPipeline, options)
 
-    console.log("videoId being tested:", videoId)
-    console.log("count:", await Comment.countDocuments({ video: videoId }))
-    console.log("docs:", await Comment.find({ video: videoId }))
-
     return res
         .status(200)
         .json(
@@ -103,7 +99,55 @@ const getVideoComment = asyncHandler( async(req, res) => {
         )
 })
 
+const addComment = asyncHandler( async( req, res ) => {
+    const { videoId } = req.params
+    const { content } = req.body
+
+    if(!new mongoose.Types.ObjectId(videoId)){
+        throw new ApiError(400, "Invalid videoId")
+    }
+
+    if(!content || !content.trim()){
+        throw new ApiError(400, "Comment content is required")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(404, "video not found")
+    }
+
+    const comment = await Comment.create({
+        content: content.trim(),
+        video: videoId,
+        owner: req.user._id
+    })
+
+    if(!comment){
+        throw new ApiError(500, "Failed to add comment, try again later")
+    }
+
+    const createdComment = {
+        ...comment._doc,
+        owner: {
+            _id: req.user._id,
+            userName: req.user.username,
+            fullName: req.user.fullName,
+            avater: req.user.avatar
+        },
+        likeCount: 0,
+        isLiked: false
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, createdComment, "Comment created successfully")
+        )
+})
+
 
 export {
-    getVideoComment
+    getVideoComment,
+    addComment
 }
