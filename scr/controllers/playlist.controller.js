@@ -366,7 +366,7 @@ const updatePlaylist = asyncHandler(async(req, res) => {
                 description: description || ""
             }
         },
-        { new: true }
+        { returnDocument : "after" }
     )
 
     if(!updatePlaylist){

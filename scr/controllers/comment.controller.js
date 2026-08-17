@@ -146,8 +146,50 @@ const addComment = asyncHandler( async( req, res ) => {
         )
 })
 
+const updateComment = asyncHandler( async( req, res) => {
+    const { commentId } = req.params
+    const { content } = req.body
+
+    if(!new mongoose.Types.ObjectId(commentId)){
+        throw new ApiError(400, "Invalid Comment Id")
+    }
+
+    if(!content || !content.trim()){
+        throw new ApiError(400, "Comment content is required")
+    }
+
+    const comment = await Comment.findById(commentId)
+
+    if(!comment){
+        throw new ApiError(404, "Comment not found")
+    }
+
+    const updatedComment = await Comment.findByIdAndUpdate(
+        commentId,
+        {
+            $set: {
+                content: content.trim()
+            }
+        },
+        {
+            returnDocument: "after"
+        }
+    )
+
+    if(!updatedComment){
+        throw new ApiError(500, "Something went wrong while updating comment")
+    }
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, updatedComment, "Update Comment successfully")
+        )
+})
+
 
 export {
     getVideoComment,
-    addComment
+    addComment,
+    updateComment
 }
