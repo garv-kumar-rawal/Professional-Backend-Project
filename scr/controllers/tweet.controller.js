@@ -1,4 +1,3 @@
-import mongoose, { isValidObjectId } from "mongoose"
 import  { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js"
@@ -78,7 +77,47 @@ const getUserTweet = asyncHandler( async( req, res ) => {
         )
 })
 
+const createTweet = asyncHandler( async( req, res ) => {
+
+    const { content } = req.body
+
+    if(!content || !content.trim()){
+        throw new ApiError(400, "tweet content is required")
+    }
+
+    const tweet = await Tweet.create({
+        content: content.trim(),
+        owner: req.user._id
+    })
+
+    if(!tweet){
+        throw new ApiError(500, "Something went wrong while create tweet")
+    }
+
+    const responseTweet = {
+        _id: tweet._id,
+        content: content.trim(),
+        owner: {
+            _id: req.user._id,
+            userName: req.user.username,
+            fullName: req.user.fullName,
+            avatar: req.user.avatar
+        },
+        likeCount: 0,
+        isLiked: false,
+        createdAt: tweet.createdAt,
+        updatedAt: tweet.updatedAt
+    }
+
+    return res
+        .status(201)
+        .json(
+            new ApiResponse(201, responseTweet, "Tweet created successfully")
+        )
+})
+
 export {
-    getUserTweet
+    getUserTweet,
+    createTweet
 }
 
