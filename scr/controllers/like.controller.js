@@ -29,7 +29,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
     if (existingLike) {
         return res
             .status(200)
-            .json(new ApiResponse(200, { isLiked: false }, "Video unliked successfully"))
+            .json(
+                new ApiResponse(200, { isLiked: false }, "Video unliked successfully")
+            )
     }
 
     const newLike = await Like.create({
@@ -43,7 +45,9 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
     return res
         .status(200)
-        .json(new ApiResponse(200, { isLiked: true }, "Video liked successfully"))
+        .json(
+            new ApiResponse(200, { isLiked: true }, "Video liked successfully")
+        )
 
 })
 
@@ -68,7 +72,9 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
     if(existingLike){
         return res
             .status(200)
-            .json(200, { isLiked: false }, "Comment Unlike successfully")
+            .json(
+                new ApiResponse(200, { isLiked: false }, "Comment Unlike successfully")
+            )
     }
 
     const newLike = await Like.create({
@@ -109,7 +115,9 @@ const toggleTweetLike = asyncHandler(async(req, res) => {
     if(existingLike){
         return res
             .status(200)
-            .json(200, { isLiked: false }, "Tweet Unlike successfully")
+            .json(
+                new ApiResponse(200, { isLiked: false }, "Tweet Unlike successfully")
+            )
     }
 
     const newLike = await Like.create({
@@ -123,7 +131,9 @@ const toggleTweetLike = asyncHandler(async(req, res) => {
 
     return res
         .status(200)
-        .json(200, { isLiked: true }, "tweet like successfully")
+        .json(
+            new ApiResponse(200, { isLiked: true }, "tweet like successfully")
+        )
 
 })
 
